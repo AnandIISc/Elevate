@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 
-SRC = src/main.c src/audit.c 
+SRC = src/main.c src/audit.c src/execute.c src/config.c
 
 target = elevate
 
