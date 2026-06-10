@@ -3,21 +3,34 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-char *resolve_command(char *cmd){
+char *validate_command(char *cmd){
 
+    // 1. Structural Fix: If the command is ALREADY an absolute path, verify it directly
+    if (cmd[0] == '/') {
+        if (access(cmd, X_OK) == 0) {
+            return strdup(cmd); // Return a copy so it can be freed consistently
+        }
+        return NULL;
+    }
+
+    // 2. Fallback: If it's a relative name (like 'ls'), resolve it using PATH
     char *env_p = getenv("PATH");
-
-    if(env_p == NULL){
+    if (env_p == NULL) {
         return NULL;
     }
 
     char *path = strdup(env_p);
     char *token = strtok(path, ":");
 
-    while(token != NULL){
+    while (token != NULL) {
         char *full_path = malloc(strlen(token) + strlen(cmd) + 2);
+        if (full_path == NULL) {
+            free(path);
+            return NULL;
+        }
+        
         sprintf(full_path, "%s/%s", token, cmd);
-        if(access(full_path, X_OK) == 0){
+        if (access(full_path, X_OK) == 0) {
             free(path);
             return full_path;
         }
@@ -33,6 +46,7 @@ char *resolve_command(char *cmd){
 char* get_command_basename(char* cmd){
 
     char* base = strrchr(cmd, '/');
+
     if(base == NULL){
         return cmd;
     }
@@ -50,7 +64,7 @@ int is_allowed(char *user, char *cmd){
     }
     
     
-    char *full_path = resolve_command(cmd);
+    char *full_path = validate_command(cmd);
     if(full_path == NULL){
         fclose(fp);
         return 0;
